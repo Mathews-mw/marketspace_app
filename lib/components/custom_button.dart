@@ -5,7 +5,8 @@ import 'package:marketsapce_app/theme/app_colors.dart';
 enum Variant {
   primary,
   secondary,
-  muted;
+  muted,
+  danger;
 
   Color get color {
     switch (this) {
@@ -15,6 +16,8 @@ enum Variant {
         return AppColors.gray700;
       case Variant.muted:
         return AppColors.gray300;
+      case Variant.danger:
+        return Colors.redAccent;
     }
   }
 }
@@ -22,18 +25,22 @@ enum Variant {
 class CustomButton extends StatelessWidget {
   final String label;
   final Variant? variant;
+  final Widget? icon;
+  final IconAlignment? iconAlignment;
   final void Function() onPressed;
 
   const CustomButton({
     super.key,
     required this.label,
     this.variant = Variant.primary,
+    this.icon,
+    this.iconAlignment,
     required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton(
+    return FilledButton.icon(
       style: FilledButton.styleFrom(
         backgroundColor: variant != null ? variant!.color : AppColors.blueLight,
         foregroundColor:
@@ -41,8 +48,10 @@ class CustomButton extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         textStyle: GoogleFonts.karla(fontSize: 16, fontWeight: FontWeight.bold),
       ),
-      onPressed: () {},
-      child: Text('Entrar'),
+      label: Text(label),
+      icon: icon,
+      iconAlignment: iconAlignment,
+      onPressed: onPressed,
     );
   }
 }

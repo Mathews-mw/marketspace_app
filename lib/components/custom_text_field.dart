@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:marketsapce_app/theme/app_colors.dart';
 
@@ -16,6 +17,9 @@ class CustomTextField extends StatelessWidget {
   final void Function(String)? onFieldSubmitted;
   final String? Function(String?)? validator;
   final bool? enabled;
+  final int? minLines;
+  final int? maxLines;
+  final List<TextInputFormatter>? inputFormatters;
 
   const CustomTextField({
     super.key,
@@ -32,6 +36,9 @@ class CustomTextField extends StatelessWidget {
     this.onFieldSubmitted,
     this.validator,
     this.enabled = true,
+    this.minLines,
+    this.maxLines,
+    this.inputFormatters,
   });
 
   @override
@@ -50,11 +57,14 @@ class CustomTextField extends StatelessWidget {
       keyboardType: keyboardType,
       obscureText: obscureText,
       obscuringCharacter: obscuringCharacter,
+      minLines: minLines,
+      maxLines: maxLines,
+      inputFormatters: inputFormatters,
       style: GoogleFonts.karla(fontSize: 14, color: AppColors.gray700),
       decoration: InputDecoration(
         contentPadding: const EdgeInsets.only(top: 10, left: 20),
         constraints: BoxConstraints(
-          maxHeight: height * 0.065,
+          // maxHeight: height * 0.065,
           // maxWidth: width * 0.065,
         ),
         filled: true,
