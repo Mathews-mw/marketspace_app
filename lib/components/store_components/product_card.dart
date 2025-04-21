@@ -1,27 +1,15 @@
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:marketsapce_app/app_routes.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:marketsapce_app/theme/app_colors.dart';
+import 'package:marketsapce_app/screens/product_details_screen.dart';
+import 'package:marketsapce_app/models/data_transfer_objects/product_info.dart';
 
 class ProductCard extends StatelessWidget {
-  String id;
-  String name;
-  String price;
-  String owner;
-  String ownerImageUrl;
-  bool isNew;
-  String imageUrl;
+  final ProductInfo productInfo;
 
-  ProductCard({
-    super.key,
-    required this.id,
-    required this.name,
-    required this.price,
-    required this.owner,
-    required this.ownerImageUrl,
-    required this.isNew,
-    required this.imageUrl,
-  });
+  const ProductCard({super.key, required this.productInfo});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +17,7 @@ class ProductCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Hero(
-          tag: id,
+          tag: productInfo.product.id,
           child: Container(
             clipBehavior: Clip.hardEdge,
             constraints: const BoxConstraints(
@@ -39,7 +27,7 @@ class ProductCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.blueLight,
               image: DecorationImage(
-                image: NetworkImage(imageUrl),
+                image: CachedNetworkImageProvider(productInfo.images[0].url),
                 fit: BoxFit.cover,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -48,9 +36,15 @@ class ProductCard extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
-                  Navigator.of(
+                  Navigator.push(
                     context,
-                  ).pushNamed(AppRoutes.productDetails, arguments: id);
+                    MaterialPageRoute(
+                      builder:
+                          (context) => ProductDetailsScreen(
+                            productId: productInfo.product.id,
+                          ),
+                    ),
+                  );
                 },
                 child: Column(
                   children: [
@@ -68,7 +62,10 @@ class ProductCard extends StatelessWidget {
                             child: CircleAvatar(
                               radius: 16,
                               // backgroundColor: Colors.transparent,
-                              backgroundImage: NetworkImage(ownerImageUrl),
+                              backgroundImage: CachedNetworkImageProvider(
+                                productInfo.owner.avatar ??
+                                    'https://api.dicebear.com/9.x/thumbs/png?seed=${productInfo.owner.name}',
+                              ),
                             ),
                           ),
                           Container(
@@ -78,13 +75,13 @@ class ProductCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color:
-                                  isNew
-                                      ? Color.fromARGB(100, 54, 77, 157)
+                                  productInfo.product.isNew
+                                      ? const Color.fromARGB(100, 54, 77, 157)
                                       : const Color.fromARGB(100, 0, 0, 0),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              isNew ? 'NOVO' : 'USADO',
+                              productInfo.product.isNew ? 'NOVO' : 'USADO',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -101,10 +98,16 @@ class ProductCard extends StatelessWidget {
             ),
           ),
         ),
-        Text(' $name', style: TextStyle(fontSize: 16)),
         Text(
-          ' $price',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          productInfo.product.name,
+          style: TextStyle(fontSize: 15, overflow: TextOverflow.ellipsis),
+        ),
+        Text(
+          NumberFormat.simpleCurrency(
+            locale: 'pt-BR',
+            decimalDigits: 2,
+          ).format((productInfo.product.price / 100)),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ],
     );

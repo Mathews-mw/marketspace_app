@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:marketsapce_app/app_routes.dart';
 import 'package:marketsapce_app/components/custom_button.dart';
+import 'package:marketsapce_app/components/password_text_field.dart';
 import 'package:marketsapce_app/theme/app_colors.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -49,15 +51,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
 
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.gray300,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: Icon(PhosphorIconsRegular.user, size: 88),
-                ),
-
                 Column(
                   children: [
                     CustomTextField(hintText: 'Nome'),
@@ -66,9 +59,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 15),
                     CustomTextField(hintText: 'Telefone'),
                     const SizedBox(height: 15),
-                    CustomTextField(hintText: 'Senha'),
+                    PasswordTextField(hintText: 'Senha'),
                     const SizedBox(height: 15),
-                    CustomTextField(hintText: 'Confirmar Senha'),
+                    PasswordTextField(hintText: 'Confirmar Senha'),
                     const SizedBox(height: 20),
                     Row(
                       children: [
@@ -93,7 +86,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: CustomButton(
                             label: 'Ir para o login',
                             variant: Variant.muted,
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.of(context).pushNamed(AppRoutes.login);
+                            },
                           ),
                         ),
                       ],

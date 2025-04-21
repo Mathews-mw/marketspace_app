@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:marketsapce_app/theme/app_colors.dart';
 
-class CustomTextField extends StatelessWidget {
+import 'package:marketsapce_app/theme/app_colors.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+class PasswordTextField extends StatefulWidget {
   final TextEditingController? controller;
   final TextInputType? keyboardType;
-  final bool obscureText;
-  final String obscuringCharacter;
-  final Widget? prefixIcon;
-  final Widget? suffixIcon;
   final String? hintText;
   final TextInputAction? textInputAction;
   final void Function(String)? onChanged;
@@ -17,18 +15,12 @@ class CustomTextField extends StatelessWidget {
   final void Function(String)? onFieldSubmitted;
   final String? Function(String?)? validator;
   final bool? enabled;
-  final int? minLines;
-  final int? maxLines;
   final List<TextInputFormatter>? inputFormatters;
 
-  const CustomTextField({
+  const PasswordTextField({
     super.key,
     this.controller,
     this.keyboardType,
-    this.obscureText = false,
-    this.obscuringCharacter = '*',
-    this.prefixIcon,
-    this.suffixIcon,
     this.hintText,
     this.textInputAction,
     this.onChanged,
@@ -36,10 +28,21 @@ class CustomTextField extends StatelessWidget {
     this.onFieldSubmitted,
     this.validator,
     this.enabled = true,
-    this.minLines = 1,
-    this.maxLines = 1,
     this.inputFormatters,
   });
+
+  @override
+  State<PasswordTextField> createState() => _PasswordTextFieldState();
+}
+
+class _PasswordTextFieldState extends State<PasswordTextField> {
+  bool obscurePassword = true;
+
+  onToggleObscurePassword() {
+    setState(() {
+      obscurePassword = !obscurePassword;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,19 +50,16 @@ class CustomTextField extends StatelessWidget {
     double width = MediaQuery.of(context).size.width;
 
     return TextFormField(
-      enabled: enabled,
-      controller: controller,
-      textInputAction: textInputAction,
-      onSaved: onSaved,
-      onChanged: onChanged,
-      onFieldSubmitted: onFieldSubmitted,
-      validator: validator,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      obscuringCharacter: obscuringCharacter,
-      minLines: minLines,
-      maxLines: maxLines,
-      inputFormatters: inputFormatters,
+      enabled: widget.enabled,
+      controller: widget.controller,
+      textInputAction: widget.textInputAction,
+      onSaved: widget.onSaved,
+      onChanged: widget.onChanged,
+      onFieldSubmitted: widget.onFieldSubmitted,
+      validator: widget.validator,
+      obscureText: obscurePassword,
+      obscuringCharacter: '*',
+      inputFormatters: widget.inputFormatters,
       style: GoogleFonts.karla(fontSize: 14, color: AppColors.gray700),
       decoration: InputDecoration(
         contentPadding: const EdgeInsets.only(top: 10, left: 20),
@@ -69,11 +69,21 @@ class CustomTextField extends StatelessWidget {
         ),
         filled: true,
         fillColor: Colors.white,
-        hintText: hintText,
+        hintText: widget.hintText,
         hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.gray400),
         errorStyle: GoogleFonts.inter(fontSize: 12, color: Colors.redAccent),
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
+        suffixIcon: IconButton(
+          icon: Icon(
+            obscurePassword
+                ? PhosphorIconsRegular.eye
+                : PhosphorIconsRegular.eyeSlash,
+          ),
+          onPressed: () {
+            setState(() {
+              obscurePassword = !obscurePassword;
+            });
+          },
+        ),
 
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(

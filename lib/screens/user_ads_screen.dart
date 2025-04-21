@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:marketsapce_app/components/user_adds_components/user_product_card.dart';
-import 'package:marketsapce_app/theme/app_colors.dart';
+import 'package:marketsapce_app/providers/users_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import 'package:marketsapce_app/app_routes.dart';
+import 'package:marketsapce_app/theme/app_colors.dart';
+import 'package:marketsapce_app/components/user_adds_components/user_product_card.dart';
+import 'package:provider/provider.dart';
 
 class UserAdsScreen extends StatefulWidget {
   const UserAdsScreen({super.key});
@@ -11,7 +15,34 @@ class UserAdsScreen extends StatefulWidget {
 }
 
 class _UserAdsScreenState extends State<UserAdsScreen> {
-  int _currentScreenIndex = 0;
+  bool _isLoading = false;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_initialized) {
+      _initialized = true;
+      _loadUserProductsData();
+    }
+  }
+
+  Future<void> _loadUserProductsData() async {
+    setState(() => _isLoading = true);
+
+    final userProvider = Provider.of<UsersProvider>(context, listen: false);
+
+    try {
+      final user = userProvider.user;
+
+      if (user != null) {
+        await userProvider.fetchUserProducts(user.id);
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +51,15 @@ class _UserAdsScreenState extends State<UserAdsScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.gray100,
         title: Text('Meus anúncios'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(PhosphorIconsRegular.plus),
+            onPressed: () {
+              Navigator.of(context).pushNamed(AppRoutes.createAdvertise);
+            },
+          ),
+        ],
       ),
       body: Container(
         padding: const EdgeInsets.all(16),
@@ -61,23 +101,6 @@ class _UserAdsScreenState extends State<UserAdsScreen> {
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: Colors.white,
-        selectedIndex: _currentScreenIndex,
-        onDestinationSelected: (index) {
-          setState(() => _currentScreenIndex = index);
-        },
-        destinations: [
-          NavigationDestination(
-            icon: Icon(PhosphorIconsFill.house),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(PhosphorIconsFill.tag),
-            label: 'Meus anúncios',
-          ),
-        ],
       ),
     );
   }
