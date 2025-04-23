@@ -1,28 +1,19 @@
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:marketsapce_app/app_routes.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:marketsapce_app/theme/app_colors.dart';
+import 'package:marketsapce_app/screens/user_product_details_screen.dart';
+import 'package:marketsapce_app/models/data_transfer_objects/product_info.dart';
 
 class UserProductCard extends StatelessWidget {
-  String id;
-  String name;
-  String price;
-  String owner;
-  String ownerImageUrl;
-  bool isNew;
-  bool isActive;
-  String imageUrl;
+  final ProductInfo productInfo;
+  final Future<void> Function() onUpdateProduct;
 
-  UserProductCard({
+  const UserProductCard({
     super.key,
-    required this.id,
-    required this.name,
-    required this.price,
-    required this.owner,
-    required this.ownerImageUrl,
-    required this.isNew,
-    required this.isActive,
-    required this.imageUrl,
+    required this.productInfo,
+    required this.onUpdateProduct,
   });
 
   @override
@@ -31,7 +22,7 @@ class UserProductCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Hero(
-          tag: id,
+          tag: productInfo.product.id,
           child: Container(
             clipBehavior: Clip.hardEdge,
             constraints: const BoxConstraints(
@@ -42,10 +33,10 @@ class UserProductCard extends StatelessWidget {
               color: AppColors.blueLight,
               image: DecorationImage(
                 colorFilter:
-                    isNew
+                    productInfo.product.isNew
                         ? null
                         : ColorFilter.mode(Colors.black45, BlendMode.darken),
-                image: NetworkImage(imageUrl),
+                image: CachedNetworkImageProvider(productInfo.images[0].url),
                 fit: BoxFit.cover,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -53,10 +44,20 @@ class UserProductCard extends StatelessWidget {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () {
-                  Navigator.of(
+                onTap: () async {
+                  final updated = await Navigator.push<bool>(
                     context,
-                  ).pushNamed(AppRoutes.userProductDetails, arguments: id);
+                    MaterialPageRoute(
+                      builder:
+                          (context) => UserProductDetailsScreen(
+                            productId: productInfo.product.id,
+                          ),
+                    ),
+                  );
+
+                  if (updated == true) {
+                    await onUpdateProduct();
+                  }
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -76,13 +77,13 @@ class UserProductCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color:
-                                  isNew
+                                  productInfo.product.isNew
                                       ? Color.fromARGB(100, 54, 77, 157)
                                       : const Color.fromARGB(100, 0, 0, 0),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              isNew ? 'NOVO' : 'USADO',
+                              productInfo.product.isNew ? 'NOVO' : 'USADO',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -92,7 +93,7 @@ class UserProductCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      if (!isActive)
+                      if (!productInfo.product.isActive)
                         Text(
                           'ANÚNCIO DESATIVADO',
                           style: TextStyle(
@@ -108,17 +109,16 @@ class UserProductCard extends StatelessWidget {
             ),
           ),
         ),
-        Text(' $name'),
-        Text.rich(
-          TextSpan(
-            text: ' R\$ ',
-            children: [TextSpan(text: price, style: TextStyle(fontSize: 18))],
-          ),
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            height: 0.8,
-          ),
+        Text(
+          productInfo.product.name,
+          style: TextStyle(fontSize: 15, overflow: TextOverflow.ellipsis),
+        ),
+        Text(
+          NumberFormat.simpleCurrency(
+            locale: 'pt-BR',
+            decimalDigits: 2,
+          ).format((productInfo.product.price / 100)),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ],
     );

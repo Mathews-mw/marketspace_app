@@ -105,7 +105,7 @@ class HttpService {
     }
   }
 
-  Future<dynamic> delete(String endpoint, Map<String, dynamic> data) async {
+  Future<dynamic> delete(String endpoint) async {
     _headers.clear();
 
     final token = await AuthService().getToken();
@@ -124,26 +124,28 @@ class HttpService {
     }
   }
 
-  Future<dynamic> multiPartRequest(String endpoint, File file) async {
+  Future<dynamic> multiPartRequest(String endpoint, List<File> files) async {
     final token = await AuthService().getToken();
 
     try {
       final request = http.MultipartRequest(
-        'PATCH',
+        'POST',
         Uri.parse("$_baseUrl/$endpoint"),
       );
 
-      final mimeType = lookupMimeType(file.path);
+      for (var file in files) {
+        final mimeType = lookupMimeType(file.path);
 
-      final [type, subtype] = mimeType!.split('/');
+        final [type, subtype] = mimeType!.split('/');
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          file.path,
-          contentType: MediaType(type, subtype),
-        ),
-      );
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'file',
+            file.path,
+            contentType: MediaType(type, subtype),
+          ),
+        );
+      }
 
       request.headers.addAll({"Authorization": 'Bearer $token'});
 

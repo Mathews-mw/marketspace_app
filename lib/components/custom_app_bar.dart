@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:marketsapce_app/theme/app_colors.dart';
 import 'package:marketsapce_app/providers/users_provider.dart';
@@ -33,7 +34,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                   child: CircleAvatar(
                     radius: 25,
-                    backgroundImage: NetworkImage(
+                    backgroundImage: CachedNetworkImageProvider(
                       user!.avatar ??
                           'https://api.dicebear.com/9.x/thumbs/png?seed=${user.name}',
                     ),

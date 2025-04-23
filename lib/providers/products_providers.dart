@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -23,6 +24,64 @@ class ProductsProviders with ChangeNotifier {
   ({String? previousCursor, String? nextCursor, bool? stillHaveData})
   get cursor {
     return _cursor;
+  }
+
+  Future<String> createProduct(Map<String, dynamic> data) async {
+    try {
+      final response = await _httpService.post('products', data);
+
+      notifyListeners();
+
+      return response['product_id'] as String;
+    } catch (error) {
+      print('Create product error: $error');
+      rethrow;
+    }
+  }
+
+  Future<void> updateProduct(
+    String productId,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      await _httpService.put('products/$productId', data);
+
+      notifyListeners();
+    } catch (error) {
+      print('Update product error: $error');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteProduct(String productId) async {
+    try {
+      await _httpService.delete('products/$productId');
+
+      notifyListeners();
+    } catch (error) {
+      print('Delete product error: $error');
+      rethrow;
+    }
+  }
+
+  Future<void> uploadProductImages(String productId, List<File> files) async {
+    try {
+      await _httpService.multiPartRequest('product-images/$productId', files);
+    } catch (error) {
+      print('Upload product images  error: $error');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteProductImages(List<String> imageIds) async {
+    try {
+      for (var imageId in imageIds) {
+        await _httpService.delete('product-images/$imageId');
+      }
+    } catch (error) {
+      print('Delete product images  error: $error');
+      rethrow;
+    }
   }
 
   Future<void> fetchProductsInfo({String? cursor}) async {

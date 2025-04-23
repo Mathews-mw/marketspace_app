@@ -1,32 +1,38 @@
 import 'dart:io';
-
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:marketsapce_app/app_routes.dart';
-import 'package:marketsapce_app/models/ad_preview.dart';
-import 'package:marketsapce_app/providers/users_provider.dart';
-import 'package:marketsapce_app/screens/ad_preview_screen.dart';
-import 'package:marketsapce_app/utils/currency_format_remover.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 
 import 'package:marketsapce_app/theme/app_colors.dart';
+import 'package:marketsapce_app/@types/payment_type.dart';
+import 'package:marketsapce_app/models/product_image.dart';
+import 'package:marketsapce_app/models/edit_ad_preview.dart';
+import 'package:marketsapce_app/providers/users_provider.dart';
 import 'package:marketsapce_app/components/custom_button.dart';
 import 'package:marketsapce_app/components/custom_text_field.dart';
+import 'package:marketsapce_app/utils/currency_format_remover.dart';
 import 'package:marketsapce_app/@mixins/form_validations_mixin.dart';
-import 'package:provider/provider.dart';
+import 'package:marketsapce_app/screens/edit_ad_preview_screen.dart';
+import 'package:marketsapce_app/models/data_transfer_objects/product-details.dart';
 
-class CreateAdVertiseScreen extends StatefulWidget {
-  const CreateAdVertiseScreen({super.key});
+class EditAdVertiseScreen extends StatefulWidget {
+  final ProductDetails productDetails;
+
+  const EditAdVertiseScreen({super.key, required this.productDetails});
 
   @override
-  State<CreateAdVertiseScreen> createState() => _CreateAdVertiseScreen();
+  State<EditAdVertiseScreen> createState() => _EditAdVertiseScreen();
 }
 
-class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
+class _EditAdVertiseScreen extends State<EditAdVertiseScreen>
     with FormValidationsMixin {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final Map<String, Object> formData = <String, Object>{};
+
+  bool _isLoading = false;
 
   String? isNew;
   bool? isCheckedPix = false;
@@ -37,9 +43,10 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
   bool acceptTrade = false;
 
   List<String> _paymentMethods = [];
-  List<File> _pickedImages = [];
 
-  bool _isLoading = false;
+  final List<String> _removeMarkedImages = [];
+  final List<({bool isLocalImage, File? file, ProductImage? image})> _images =
+      [];
 
   static const WidgetStateProperty<Icon> thumbIcon =
       WidgetStateProperty<Icon>.fromMap(<WidgetStatesConstraint, Icon>{
@@ -57,8 +64,10 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
 
       if (imageFromCamera == null) return;
 
+      final file = File(imageFromCamera.path);
+
       setState(() {
-        _pickedImages.add(File(imageFromCamera.path));
+        _images.add((isLocalImage: true, file: file, image: null));
       });
     } else {
       final imagesFromCamera = await picker.pickMultiImage(limit: 3);
@@ -76,8 +85,10 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
       }
 
       imagesFromCamera.forEach((image) {
+        final file = File(image.path);
+
         setState(() {
-          _pickedImages.add(File(image.path));
+          _images.add((isLocalImage: true, file: file, image: null));
         });
       });
     }
@@ -89,7 +100,11 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
 
   _removeImageFromList(int index) {
     setState(() {
-      _pickedImages.removeAt(index);
+      final removed = _images.removeAt(index);
+      print('removed item: $removed');
+      if (!removed.isLocalImage) {
+        _removeMarkedImages.add(removed.image!.id);
+      }
     });
   }
 
@@ -99,9 +114,9 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
         newIndex -= 1;
       }
 
-      final item = _pickedImages.removeAt(oldIndex);
+      final item = _images.removeAt(oldIndex);
 
-      _pickedImages.insert(newIndex, item);
+      _images.insert(newIndex, item);
     });
   }
 
@@ -120,7 +135,8 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
     try {
       final user = Provider.of<UsersProvider>(context, listen: false).user;
 
-      final adPreviewData = AdPreview(
+      final adPreviewData = EditAdPreview(
+        productId: widget.productDetails.product.id,
         author: user!.name,
         perfilUrl:
             user.avatar ??
@@ -131,14 +147,16 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
         isNew: formData['isNew'] as bool,
         isTradable: formData['acceptTrade'] as bool,
         paymentMethods: _paymentMethods,
-        images: _pickedImages,
+        images: _images,
+        removeMarkedImages: _removeMarkedImages,
       );
 
       if (context.mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AdPreviewScreen(adPreviewData: adPreviewData),
+            builder:
+                (context) => EditAdPreviewScreen(adPreviewData: adPreviewData),
           ),
         );
       }
@@ -147,6 +165,35 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    formData['id'] = widget.productDetails.product.id;
+    formData['title'] = widget.productDetails.product.name;
+    formData['description'] = widget.productDetails.product.description;
+    formData['price'] = widget.productDetails.product.price;
+    formData['isNew'] = widget.productDetails.product.isNew;
+    formData['acceptTrade'] = widget.productDetails.product.acceptTrade;
+
+    acceptTrade = widget.productDetails.product.acceptTrade;
+    isNew = widget.productDetails.product.isNew ? 'NEW' : 'OLD';
+
+    widget.productDetails.images.forEach((item) {
+      _images.add((isLocalImage: false, file: null, image: item));
+    });
+
+    _paymentMethods =
+        widget.productDetails.paymentMethods
+            .map((item) => item.type.value)
+            .toList();
+
+    isCheckedPix = _paymentMethods.contains(PaymentType.pix.value);
+    isCheckedBoleto = _paymentMethods.contains(PaymentType.boleto.value);
+    isCheckedDinheiro = _paymentMethods.contains(PaymentType.dinheiro.value);
+    isCheckedCredito = _paymentMethods.contains(PaymentType.credito.value);
+    isCheckedDeposito = _paymentMethods.contains(PaymentType.deposito.value);
   }
 
   @override
@@ -183,12 +230,7 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.gray100,
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text('Criar anúncio', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.blueLight,
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
+      appBar: AppBar(centerTitle: true, title: Text('Editar anúncio')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.only(
@@ -207,7 +249,7 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
                   'Escolha até 3 imagens para mostrar o quando o seu produto é incrível!',
                 ),
                 const SizedBox(height: 10),
-                if (_pickedImages.length < 3)
+                if (_images.length < 3)
                   CustomButton(
                     label: 'Selecionar imagens',
                     onPressed: _takePictureDialog,
@@ -215,7 +257,7 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
                     icon: Icon(PhosphorIconsRegular.images),
                   ),
                 const SizedBox(height: 10),
-                if (_pickedImages.isNotEmpty)
+                if (_images.isNotEmpty)
                   SizedBox(
                     height: 100,
                     width: MediaQuery.sizeOf(context).width - 32,
@@ -223,13 +265,13 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
                       scrollDirection: Axis.horizontal,
                       onReorder: _onReorderList,
                       children: List.generate(
-                        _pickedImages.length,
+                        _images.length,
                         (index) => Container(
-                          key: ValueKey(_pickedImages[index]),
+                          key: ValueKey(_images[index]),
                           child: ReorderableDragStartListener(
                             index: index,
                             child: Stack(
-                              key: ValueKey(_pickedImages[index]),
+                              key: ValueKey(_images[index]),
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
@@ -244,11 +286,18 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Center(
-                                      child: Image.file(
-                                        _pickedImages[index],
-                                        fit: BoxFit.cover,
-                                        width: 100,
-                                      ),
+                                      child:
+                                          _images[index].isLocalImage
+                                              ? Image.file(
+                                                _images[index].file!,
+                                                fit: BoxFit.cover,
+                                                width: 100,
+                                              )
+                                              : Image.network(
+                                                _images[index].image!.url,
+                                                width: 100,
+                                                fit: BoxFit.cover,
+                                              ),
                                     ),
                                   ),
                                 ),
@@ -288,6 +337,7 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
                   hintText: 'Título do anúncio',
                   textInputAction: TextInputAction.next,
                   validator: isNotEmpty,
+                  initialValue: formData['title']?.toString(),
                   onSaved: (value) {
                     formData['title'] = value ?? '';
                   },
@@ -299,6 +349,7 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
                   maxLines: 10,
                   keyboardType: TextInputType.multiline,
                   textInputAction: TextInputAction.newline,
+                  initialValue: formData['description']?.toString(),
                   validator: isNotEmpty,
                   onSaved: (value) {
                     formData['description'] = value ?? '';
@@ -344,6 +395,10 @@ class _CreateAdVertiseScreen extends State<CreateAdVertiseScreen>
                 CustomTextField(
                   hintText: 'Valor do produto',
                   keyboardType: TextInputType.number,
+                  initialValue: NumberFormat.simpleCurrency(
+                    locale: 'pt-BR',
+                    decimalDigits: 2,
+                  ).format((widget.productDetails.product.price / 100)),
                   inputFormatters: [
                     CurrencyTextInputFormatter.currency(
                       locale: 'pt-BR',

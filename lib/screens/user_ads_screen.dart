@@ -1,11 +1,33 @@
+import 'dart:collection';
 import 'package:flutter/material.dart';
-import 'package:marketsapce_app/providers/users_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:marketsapce_app/app_routes.dart';
 import 'package:marketsapce_app/theme/app_colors.dart';
+import 'package:marketsapce_app/providers/users_provider.dart';
 import 'package:marketsapce_app/components/user_adds_components/user_product_card.dart';
-import 'package:provider/provider.dart';
+
+typedef ProductStateEntry = DropdownMenuEntry<ProductStateLabel>;
+
+enum ProductStateLabel {
+  all('Todos', 'ALL'),
+  active('Ativado', 'ACTIVE'),
+  disabled('Desativado', 'disable');
+
+  const ProductStateLabel(this.label, this.value);
+  final String label;
+  final String value;
+
+  static final List<ProductStateEntry> entries =
+      UnmodifiableListView<ProductStateEntry>(
+        values.map<ProductStateEntry>(
+          (ProductStateLabel item) =>
+              ProductStateEntry(value: item, label: item.label),
+        ),
+      );
+}
 
 class UserAdsScreen extends StatefulWidget {
   const UserAdsScreen({super.key});
@@ -17,6 +39,9 @@ class UserAdsScreen extends StatefulWidget {
 class _UserAdsScreenState extends State<UserAdsScreen> {
   bool _isLoading = false;
   bool _initialized = false;
+
+  final TextEditingController productStateController = TextEditingController();
+  ProductStateLabel? productState;
 
   @override
   void didChangeDependencies() {
@@ -71,122 +96,71 @@ class _UserAdsScreenState extends State<UserAdsScreen> {
             topRight: Radius.circular(12),
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [Text('9 anúncios')]),
-            const SizedBox(height: 10),
-            const SizedBox(height: 10),
-            Expanded(
-              child: GridView.builder(
-                itemCount: productList.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
+        child: Consumer<UsersProvider>(
+          builder: (ctx, userProvider, child) {
+            final userProducts = userProvider.userProducts;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Skeletonizer(
+                      enabled: _isLoading,
+                      child: Text('${userProducts.length} anúncio(s)'),
+                    ),
+                    Skeletonizer(
+                      enabled: _isLoading,
+                      child: DropdownMenu<ProductStateLabel>(
+                        requestFocusOnTap: true,
+                        controller: productStateController,
+                        dropdownMenuEntries: ProductStateLabel.entries,
+                        initialSelection: ProductStateLabel.all,
+                        inputDecorationTheme: InputDecorationTheme(
+                          filled: true,
+                          fillColor: Colors.white,
+                          constraints: BoxConstraints(
+                            maxHeight: 50,
+                            maxWidth: 180,
+                          ),
+                          contentPadding: const EdgeInsets.only(left: 20),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onSelected: (ProductStateLabel? value) {
+                          setState(() {
+                            productState = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                itemBuilder: (context, index) {
-                  return UserProductCard(
-                    id: productList[index].id,
-                    name: productList[index].name,
-                    price: productList[index].price,
-                    owner: productList[index].owner,
-                    ownerImageUrl: productList[index].ownerImageUrl,
-                    isNew: productList[index].isNew,
-                    isActive: productList[index].isActive,
-                    imageUrl: productList[index].imageUrl,
-                  );
-                },
-              ),
-            ),
-          ],
+                const SizedBox(height: 10),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: GridView.builder(
+                    itemCount: userProducts.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                    ),
+                    itemBuilder: (context, index) {
+                      return UserProductCard(
+                        productInfo: userProducts[index],
+                        onUpdateProduct: _loadUserProductsData,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
-}
-
-final List<ProductItem> productList = [
-  ProductItem(
-    id: '1',
-    name: 'Bicicleta Cross',
-    price: '1500,00',
-    owner: 'Maria Gomes',
-    ownerImageUrl:
-        'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    isNew: true,
-    isActive: true,
-    imageUrl:
-        'https://plus.unsplash.com/premium_photo-1678718713393-2b88cde9605b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  ),
-  ProductItem(
-    id: '2',
-    name: 'Bicicleta Street',
-    price: '1200,00',
-    owner: 'Maria Gomes',
-    ownerImageUrl:
-        'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    isNew: true,
-    isActive: true,
-    imageUrl:
-        'https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  ),
-  ProductItem(
-    id: '3',
-    name: 'Camisa 705 - Preta',
-    price: '59,00',
-    owner: 'Maria Gomes',
-    ownerImageUrl:
-        'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    isNew: true,
-    isActive: true,
-    imageUrl:
-        'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=2030&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  ),
-  ProductItem(
-    id: '4',
-    name: 'Tênis Nike',
-    price: '500,00',
-    owner: 'Maria Gomes',
-    ownerImageUrl:
-        'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    isNew: true,
-    isActive: true,
-    imageUrl:
-        'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  ),
-  ProductItem(
-    id: '5',
-    name: 'Tênis All Star',
-    price: '249,99',
-    owner: 'Maria Gomes',
-    ownerImageUrl:
-        'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    isNew: false,
-    isActive: false,
-    imageUrl:
-        'https://plus.unsplash.com/premium_photo-1682125177822-63c27a3830ea?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  ),
-];
-
-class ProductItem {
-  String id;
-  String name;
-  String price;
-  String owner;
-  String ownerImageUrl;
-  bool isNew;
-  bool isActive;
-  String imageUrl;
-
-  ProductItem({
-    required this.id,
-    required this.name,
-    required this.price,
-    required this.owner,
-    required this.ownerImageUrl,
-    required this.isNew,
-    required this.isActive,
-    required this.imageUrl,
-  });
 }

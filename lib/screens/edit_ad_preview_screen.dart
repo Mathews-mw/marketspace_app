@@ -5,22 +5,22 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:marketsapce_app/app_routes.dart';
 import 'package:marketsapce_app/theme/app_colors.dart';
-import 'package:marketsapce_app/models/ad_preview.dart';
+import 'package:marketsapce_app/models/edit_ad_preview.dart';
 import 'package:marketsapce_app/components/custom_button.dart';
 import 'package:marketsapce_app/components/loading_overlay.dart';
 import 'package:marketsapce_app/providers/products_providers.dart';
 import 'package:marketsapce_app/components/product_state_badge.dart';
 
-class AdPreviewScreen extends StatefulWidget {
-  final AdPreview adPreviewData;
+class EditAdPreviewScreen extends StatefulWidget {
+  final EditAdPreview adPreviewData;
 
-  const AdPreviewScreen({super.key, required this.adPreviewData});
+  const EditAdPreviewScreen({super.key, required this.adPreviewData});
 
   @override
-  State<AdPreviewScreen> createState() => _AdPreviewScreenState();
+  State<EditAdPreviewScreen> createState() => _EditAdPreviewScreenState();
 }
 
-class _AdPreviewScreenState extends State<AdPreviewScreen> {
+class _EditAdPreviewScreenState extends State<EditAdPreviewScreen> {
   bool _isLoading = false;
 
   Future<void> publishAd() async {
@@ -41,18 +41,36 @@ class _AdPreviewScreenState extends State<AdPreviewScreen> {
         listen: false,
       );
 
-      final productIdResponse = await productProvider.createProduct(data);
+      await productProvider.updateProduct(widget.adPreviewData.productId, data);
 
-      await productProvider.uploadProductImages(
-        productIdResponse,
-        widget.adPreviewData.images,
-      );
+      final imageFiles =
+          widget.adPreviewData.images
+              .where((item) => item.isLocalImage)
+              .toList()
+              .map((item) => item.file!)
+              .toList();
+
+      // Upload de imagens
+      if (imageFiles.isNotEmpty) {
+        await productProvider.uploadProductImages(
+          widget.adPreviewData.productId,
+          imageFiles,
+        );
+      }
+
+      // Deletar imagens
+      if (widget.adPreviewData.removeMarkedImages != null &&
+          widget.adPreviewData.removeMarkedImages!.isNotEmpty) {
+        await productProvider.deleteProductImages(
+          widget.adPreviewData.removeMarkedImages!,
+        );
+      }
 
       if (context.mounted) {
-        await Navigator.of(context).pushReplacementNamed(AppRoutes.userAdds);
+        Navigator.of(context).popUntil(ModalRoute.withName(AppRoutes.home));
       }
     } catch (error) {
-      print('Publish Ad error: $error');
+      print('Publish Edit Ad error: $error');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -104,8 +122,13 @@ class _AdPreviewScreenState extends State<AdPreviewScreen> {
                       borderRadius: BorderRadius.circular(0),
                     ),
                     children:
-                        widget.adPreviewData.images.map((image) {
-                          return Image.file(image, fit: BoxFit.cover);
+                        widget.adPreviewData.images.map((item) {
+                          return item.isLocalImage
+                              ? Image.file(item.file!, fit: BoxFit.cover)
+                              : Image.network(
+                                item.image!.url,
+                                fit: BoxFit.cover,
+                              );
                         }).toList(),
                   ),
                 ),

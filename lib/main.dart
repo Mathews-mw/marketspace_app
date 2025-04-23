@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:marketsapce_app/app_routes.dart';
 import 'package:marketsapce_app/theme/theme.dart';
@@ -12,9 +12,7 @@ import 'package:marketsapce_app/screens/register_screen.dart';
 import 'package:marketsapce_app/screens/user_ads_screen.dart';
 import 'package:marketsapce_app/providers/users_provider.dart';
 import 'package:marketsapce_app/providers/products_providers.dart';
-import 'package:marketsapce_app/screens/product_details_screen.dart';
 import 'package:marketsapce_app/screens/create_advertise_screen.dart';
-import 'package:marketsapce_app/screens/user_product_details_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,7 +47,6 @@ class MyApp extends StatelessWidget {
           AppRoutes.register: (ctx) => RegisterScreen(),
           AppRoutes.home: (ctx) => HomeScreen(),
           AppRoutes.userAdds: (ctx) => UserAdsScreen(),
-          AppRoutes.userProductDetails: (ctx) => UserProductDetailsScreen(),
           AppRoutes.createAdvertise: (ctx) => CreateAdVertiseScreen(),
         },
       ),

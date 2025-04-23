@@ -11,6 +11,7 @@ class CustomTextField extends StatelessWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final String? hintText;
+  final String? initialValue;
   final TextInputAction? textInputAction;
   final void Function(String)? onChanged;
   final void Function(String?)? onSaved;
@@ -30,6 +31,7 @@ class CustomTextField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.hintText,
+    this.initialValue,
     this.textInputAction,
     this.onChanged,
     this.onSaved,
@@ -50,6 +52,7 @@ class CustomTextField extends StatelessWidget {
       enabled: enabled,
       controller: controller,
       textInputAction: textInputAction,
+      initialValue: initialValue,
       onSaved: onSaved,
       onChanged: onChanged,
       onFieldSubmitted: onFieldSubmitted,
