@@ -22,13 +22,16 @@ class StoreScreen extends StatefulWidget {
 class _StoreScreenState extends State<StoreScreen> {
   bool _hasLoadedData = false;
   bool _isLoading = false;
+  bool _isDirtyField = false;
 
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(infinityScrollListener);
+    _searchController.addListener(_handleDirtyField);
   }
 
   @override
@@ -43,8 +46,9 @@ class _StoreScreenState extends State<StoreScreen> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
     super.dispose();
+    _scrollController.dispose();
+    _searchController.dispose();
   }
 
   infinityScrollListener() async {
@@ -65,12 +69,10 @@ class _StoreScreenState extends State<StoreScreen> {
       listen: false,
     );
 
+    final cursor = productProvider.cursor;
+    final (:nextCursor, :previousCursor, :stillHaveData) = cursor;
+
     try {
-      final cursor = productProvider.cursor;
-      final (:nextCursor, :previousCursor, :stillHaveData) = cursor;
-
-      print('cursor on home screen: $cursor');
-
       if (stillHaveData == false) {
         print('all data has been fetched!');
         return;
@@ -80,6 +82,28 @@ class _StoreScreenState extends State<StoreScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> searchProducts() async {
+    if (_searchController.text.isEmpty) return;
+
+    print('search on function: ${_searchController.text}');
+
+    await Provider.of<ProductsProviders>(
+      context,
+      listen: false,
+    ).fetchProductsInfo(search: _searchController.text);
+  }
+
+  Future<void> clearFilter() async {
+    _searchController.clear();
+
+    Provider.of<ProductsProviders>(context, listen: false).clearProductsInfo();
+
+    await Provider.of<ProductsProviders>(
+      context,
+      listen: false,
+    ).fetchProductsInfo();
   }
 
   _handleShowFilterBottomSheet(BuildContext ctx) {
@@ -92,6 +116,14 @@ class _StoreScreenState extends State<StoreScreen> {
         return Filters();
       },
     );
+  }
+
+  void _handleDirtyField() {
+    if (_searchController.text.isNotEmpty) {
+      setState(() => _isDirtyField = true);
+    } else {
+      setState(() => _isDirtyField = false);
+    }
   }
 
   @override
@@ -153,10 +185,25 @@ class _StoreScreenState extends State<StoreScreen> {
                         Expanded(
                           child: CustomTextField(
                             hintText: 'Buscar anúncio',
+                            controller: _searchController,
                             textInputAction: TextInputAction.search,
-                            suffixIcon: Icon(
-                              PhosphorIconsRegular.magnifyingGlass,
+                            suffixIcon: IconButton(
+                              onPressed:
+                                  _isDirtyField
+                                      ? () async {
+                                        await clearFilter();
+                                      }
+                                      : null,
+                              icon:
+                                  _isDirtyField
+                                      ? Icon(PhosphorIconsRegular.xCircle)
+                                      : Icon(
+                                        PhosphorIconsRegular.magnifyingGlass,
+                                      ),
                             ),
+                            onFieldSubmitted: (value) async {
+                              await searchProducts();
+                            },
                           ),
                         ),
                         const SizedBox(width: 5),

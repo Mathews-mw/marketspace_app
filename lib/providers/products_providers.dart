@@ -1,6 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
-
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import 'package:marketsapce_app/services/http_service.dart';
@@ -24,6 +23,16 @@ class ProductsProviders with ChangeNotifier {
   ({String? previousCursor, String? nextCursor, bool? stillHaveData})
   get cursor {
     return _cursor;
+  }
+
+  set cursor(
+    ({String? previousCursor, String? nextCursor, bool? stillHaveData}) cursor,
+  ) {
+    cursor = cursor;
+  }
+
+  clearProductsInfo() {
+    _productsInfo = [];
   }
 
   Future<String> createProduct(Map<String, dynamic> data) async {
@@ -84,13 +93,26 @@ class ProductsProviders with ChangeNotifier {
     }
   }
 
-  Future<void> fetchProductsInfo({String? cursor}) async {
-    try {
-      final queryParameters = cursor != null ? '&cursor=$cursor' : '';
+  Future<void> fetchProductsInfo({String? cursor, String? search}) async {
+    String uri = 'products/cursor-mode?limit=20';
 
-      final response = await _httpService.get(
-        endpoint: 'products/cursor-mode?limit=20$queryParameters',
-      );
+    print('search on provider: $search');
+
+    try {
+      if (cursor != null) {
+        uri = '$uri&cursor=$cursor';
+      }
+
+      // final queryParameters = cursor != null ? '&cursor=$cursor' : '';
+
+      if (search != null) {
+        _productsInfo = [];
+        uri = '$uri&search=$search';
+      }
+
+      final response = await _httpService.get(endpoint: uri);
+
+      print('response: ${response.body}');
 
       final productsInfo =
           (response.body['products'] as List)

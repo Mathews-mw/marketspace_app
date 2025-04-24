@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:marketsapce_app/screens/account_screen.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:marketsapce_app/screens/store_screen.dart';
@@ -24,7 +25,12 @@ class _HomeScreenState extends State<HomeScreen> {
         statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        body: <Widget>[StoreScreen(), UserAdsScreen()][_currentScreenIndex],
+        body:
+            <Widget>[
+              StoreScreen(),
+              UserAdsScreen(),
+              AccountScreen(),
+            ][_currentScreenIndex],
         bottomNavigationBar: NavigationBar(
           backgroundColor: Colors.white,
           selectedIndex: _currentScreenIndex,
@@ -40,6 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
             NavigationDestination(
               icon: Icon(PhosphorIconsFill.tag, size: 20),
               label: 'Meus anúncios',
+            ),
+            NavigationDestination(
+              icon: Icon(PhosphorIconsFill.user, size: 20),
+              label: 'Conta',
             ),
           ],
         ),
